@@ -1,0 +1,3 @@
+foreach($_ in Get-ChildItem -Path D:\DATA\* -Include *.conf){
+	Get-Content $_ | Out-file -FilePath ("D:\DATA1\" + $_.name) -Encoding utf8
+}
