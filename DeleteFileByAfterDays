@@ -5,4 +5,4 @@ If ($filelist -ne $Null){
 	      remove-item -LiteralPath $filename.fullname}
 }else{
     $mailbody="No files"}
-send-mailmessage michael_wan@itsturnkey.com "Test email" -bodyashtml -body $mailbody -from Admin@itsturnkey.com -SmtpServer 10.14.10.41
+send-mailmessage michael_wan@itsturnkey.com "File List" -bodyashtml -body $mailbody -from Admin@itsturnkey.com -SmtpServer 10.14.10.41
