@@ -1,0 +1,8 @@
+$filelist=@(Get-ChildItem -File -Path D:\Download_20180601\* -Recurse | Where{$_.LastWriteTime -ge (Get-Date).AddDays(-7)})
+If ($filelist -ne $Null){
+    foreach ($filename in $filelist){
+        $mailbody+=$filename.fullname + "<BR>"
+	      remove-item -LiteralPath $filename.fullname}
+}else{
+    $mailbody="No files"}
+send-mailmessage michael_wan@itsturnkey.com "Test email" -bodyashtml -body $mailbody -from Admin@itsturnkey.com -SmtpServer 10.14.10.41
