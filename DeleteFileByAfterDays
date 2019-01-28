@@ -1,8 +1,16 @@
-$filelist=@(Get-ChildItem -File -Path D:\Download_20180601\* -Recurse | Where{$_.LastWriteTime -ge (Get-Date).AddDays(-7)})
+$sourcedir="D:\Download_20180601\*"
+$byday=-20
+$mailreceiver="michael_wan@itsturnkey.com"
+$mailsubject="Email Notification"
+$mailsender="Admin@itsturnkey.com"
+$mailserver="10.14.10.41"
+$filelist=@(Get-ChildItem -File -Path $sourcedir -Recurse | Where{$_.LastWriteTime -ge (Get-Date).AddDays($byday)})
 If ($filelist -ne $Null){
-	foreach ($filename in $filelist){
-		$mailbody+=$filename.fullname + "<BR>"
-		remove-item -LiteralPath $filename.fullname}
+    foreach ($filename in $filelist){
+        $mailbody+=$filename.fullname + "<BR>"
+	    remove-item -LiteralPath $filename.fullname
+    }
 }else{
-	$mailbody="No files"}
-send-mailmessage michael_wan@itsturnkey.com "File List" -bodyashtml -body $mailbody -from Admin@itsturnkey.com -SmtpServer 10.14.10.41
+    $mailbody="No files"
+}
+send-mailmessage $mailreceiver $mailsubject -bodyashtml -body $mailbody -from $mailsender -SmtpServer $mailserver
