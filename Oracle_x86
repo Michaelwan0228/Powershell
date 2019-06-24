@@ -1,0 +1,11 @@
+[System.Reflection.Assembly]::LoadWithPartialName("Oracle.DataAccess.Client")
+$constr = "User Id=xxx;Password=xxx;Data Source=xxxxxx"
+$sql="select EMP_NO from profile_user"
+$conn= New-Object Oracle.DataAccess.Client.OracleConnection($constr)
+$command = New-Object Oracle.DataAccess.Client.OracleCommand($sql,$conn)
+$conn.Open()
+$reader=$command.ExecuteReader()
+While($reader.read()){
+    Write-Host $reader.GetString(0);
+}
+$conn.Close()
