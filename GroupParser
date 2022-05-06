@@ -1,0 +1,48 @@
+function MemberParser($GroupName){
+    $MemberArray=@()
+    $StrArray=@()
+    if(-not ($script:GroupMember[$GroupName] -eq $null)){
+        $MemberArray=($script:GroupMember[$GroupName]).split(",")
+        foreach($Member in $MemberArray){
+            if(-not ($Member -match 'CN=' -or $Member -match '@')){
+                MemberParser($Member)
+            }else{
+                $StrArray+=$Member
+            }
+        }
+    }
+    return $StrArray
+}
+
+$ProgressPreference = 'SilentlyContinue'
+$LogFileName="GroupList.txt"
+$GroupArray=@()
+$Result=@()
+$GroupDesc=@{}
+$script:GroupMember=@{}
+foreach($LogStr in Get-Content -Path $LogFileName){
+    if(($LogStr.split(":"))[0] -eq "ListDescription"){
+        $GroupArray+=($LogStr.split(":"))[1]
+    }elseif(($LogStr.split(":"))[0] -eq "ListName"){
+        $GroupArray+=($LogStr.split(":"))[1]
+    }elseif(($LogStr.split(":"))[0] -eq "Members"){
+        $GroupArray+=($LogStr.split(":"))[1]
+    }
+}
+
+for($i=0;$i -le $GroupArray.count-1;$i+=3){
+    $HashKey=$GroupArray[$i+1].ToString().Trim()
+    $HashValue1=$GroupArray[$i].ToString().Trim()
+    $HashValue2=$GroupArray[$i+2].ToString().Trim()
+    $OutString=$HashKey+";"+$HashValue1+";"+$HashValue2|out-file "GroupArray.txt" -Append
+    #$GroupDesc.add($HashKey,$HashValue1)
+    #$script:GroupMember.add($HashKey,$HashValue2)
+}
+
+foreach($Hash in $script:GroupMember.keys){
+    if(-not ($script:GroupMember[$Hash] -eq $null)){
+        $Result=MemberParser($Hash)
+        $Result=$Result|Sort-Object -Unique
+        $OutString=$Hash+";"+$GroupDesc["$Hash"]+";"+($Result -join ",")|out-file "GroupParse.txt" -Append
+    }
+}
