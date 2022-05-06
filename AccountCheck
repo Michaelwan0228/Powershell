@@ -1,0 +1,47 @@
+$ProgressPreference = 'SilentlyContinue'
+$mailreceiver=@('its_ap@itsturnkey.com','its_iti@itsturnkey.com')
+$mailsubject="FTP空間使用率巡檢警告通知"
+$mailsender="ITS Infra <its_iti@itsturnkey.com>"
+$mailserver="10.14.10.41"
+$AccountPath='C:\Program Files (x86)\zFTPServer\accounts\*.*'
+ForEach($ConfigFile in Get-Item -Path $AccountPath -Include '*.uac'){
+    $ConfigContent=Get-Content -LiteralPath $ConfigFile
+    $ConfigContent|ForEach-Object{
+        Switch -Regex ($_){
+            '^Username'{
+                $Username=$_ -replace "(.*)=(.*)",'$2'
+                break
+            }
+            '^Realname'{
+                $Realname=$_ -replace "(.*)=(.*)",'$2'
+                break
+            }
+            '^\/'{
+                $Ftphome=$_ -replace "\/\|(.*)\|.*LS(\d*)U3",'$1'
+                $Ftpsize=$_ -replace "\/\|(.*)\|.*LS(\d*)U3",'$2'
+                If($Ftphome -eq $Ftpsize){
+                    $Ftphome=$Ftpsize=""
+                }
+                break
+            }          
+        }
+    }
+	If(-Not $Ftphome -eq ""){
+        $Quota=$Ftpsize/1GB
+        $Dirsize = (Get-ChildItem -LiteralPath $Ftphome -Recurse | Measure-Object -Sum Length | Select-Object Sum).sum
+        $Ratio=$DirSize / $Ftpsize
+        If($Ratio -ge 0.85){
+            $Count+=1
+            $Usage=$Ratio.tostring("P")
+  		    $Htmlbody+="<tr><td>$Username</td><td>$Realname</td><td>$Quota GB</td><td>$Usage</td></tr>"
+        }
+	}
+}
+$Mailbody+='<html><table border=1><tr><th colspan=4>FTP空間使用率巡檢 (超過85%)</th></tr>'
+$Mailbody+='<tr><td width="120">帳號名稱</td><td width="200">客戶名稱</td><td width="80">配額 GB</td><td width="100">使用率</td></tr>'
+$Mailbody+=$Htmlbody
+$Mailbody+='</table></html>'
+If($Count -ge 1){
+    #write-host $mailbody
+    send-mailmessage -SmtpServer $mailserver -from $mailsender -to $mailreceiver -Subject $mailsubject -body $mailbody -bodyashtml -Encoding ([System.Text.Encoding]::UTF8)
+}
