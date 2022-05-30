@@ -1,0 +1,34 @@
+function memberparser($groupname){
+    $strarray=@()
+    if(-not($script:grouparray[$groupname] -eq $null)){
+        foreach($item in $script:grouparray[$groupname]){
+            if(-not ($item -match 'O=ist' -or $item -match '@')){
+                memberparser($item.Split("=")[1])
+            }else{
+                $strarray+=$item
+            }
+        }
+    }
+    return $strarray
+}
+
+$root=New-Object -TypeName System.DirectoryServices.DirectoryEntry("LDAP://10.14.10.41:389","","","none")
+$LDAPfilter="(&(objectclass=dominoGroup)(|(cn=ITS*)(mail=*itsturnkey.com)))"
+$LDAPsearcher=New-Object System.DirectoryServices.DirectorySearcher($root,$LDAPfilter)
+$results=$LDAPsearcher.FindAll()
+$script:grouparray=@{}
+foreach($members in $results){
+    $keyname=($members.path).Split("=")[1]
+    $keyvalue=($members.Properties.member)
+    if(-not($script:grouparray.ContainsKey($keyname))){
+        $script:grouparray.add($keyname,$keyvalue) 
+        $outstring=$keyname+";"+($keyvalue -join ";").Replace("CN=","").Replace(",O=ist","/ist")|out-file "DominoLDAP_GroupArray.txt" -Append
+    }
+}
+foreach($hashkey in $script:grouparray.keys){
+    if(-not($hashkey -eq $null)){
+        $parser=memberparser($hashkey)
+        $parser=$parser|Sort-Object -Unique
+        $outstring=$hashkey+";"+($parser -join ";").Replace("CN=","").Replace(",O=ist","/ist")|out-file "DominoLDAP_GroupMembers.txt" -Append
+    } 
+}
