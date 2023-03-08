@@ -1,0 +1,16 @@
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+$URI='https://10.14.10.163:8006/api2/json/access/ticket'
+$Body='username=root@pam&password=*****'
+$APIAuth=Invoke-RestMethod -uri $URI -Method POST -Body $Body 
+
+$PMGCookie = New-Object System.Net.Cookie
+$PMGCookie.Value = $APIAuth.data.ticket
+$PMGCookie.Domain = '10.14.10.163'
+$PMGCookie.Name = 'PMGAuthCookie'
+$WebSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+$WebSession.Cookies.Add($PMGCookie)
+$headers = @{ CSRFPreventionToken = $APIAuth.data.CSRFPreventionToken }
+
+$URI='https://10.14.10.163:8006/api2/json/statistics/mail?starttime=1677772800'
+$Return=Invoke-RestMethod -uri $URI -Headers $heasers -WebSession $WebSession
